@@ -342,12 +342,12 @@ MIT — see [LICENSE](LICENSE).
 
 ## Credits
 
-Built for Thai learners in Claude Code bootcamps — but useful for anyone who teaches Claude Code on Windows.
+Created by **Wasin Treesinthuros** (จารโต) to eliminate the Windows installation friction that made students drop out on Day 1 of Claude Code bootcamps.
 
-If this helped your class, please **star the repo**. It helps other instructors find it.
+I originally built this for my own classroom — but anyone teaching or learning Claude Code on Windows is welcome to use, fork, or adapt it. If it saved your class a day of debugging, please **star the repo** so other instructors can find it.
 
 <div align="center">
 
-**Made for non-developers learning to ship with Claude Code.**
+**Made by จารโต — for everyone who ships with Claude Code.**
 
 </div>
