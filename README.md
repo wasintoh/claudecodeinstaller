@@ -75,13 +75,70 @@ irm https://raw.githubusercontent.com/wasintoh/claudecodeinstaller/main/claude-i
 
 3. Wait ~2 minutes. A new terminal window will open with Claude Code running when it's done.
 
-### Option B — GUI installer (for students who can't open a terminal)
+### Option B — GUI installer (build it yourself)
 
-A double-click `.exe` for absolute beginners. Built with [Tauri v2](https://v2.tauri.app/) (Rust + React), supports **Thai and English**, and ships as an NSIS installer.
+A double-click `.exe` for absolute beginners, built with [Tauri v2](https://v2.tauri.app/) (Rust + React). Supports **Thai and English**, ships as an NSIS installer, and includes the same post-install test + auto-repair + auto-launch flow as the PowerShell version.
 
-- Source: [`./claude-installer-gui/`](./claude-installer-gui)
-- Build instructions: [`./claude-installer-gui/README.md`](./claude-installer-gui/README.md)
-- Pre-built releases: see the [Releases](https://github.com/wasintoh/claudecodeinstaller/releases) page
+> **Heads up:** no pre-built `.exe` is shipped in this repo. The GUI source is here for instructors and contributors who want to **compile and distribute their own signed binary**. If you're a student, use **Option A** (the one-liner) — it's easier.
+
+#### Why no pre-built .exe?
+
+- **Code signing** — unsigned `.exe` files trigger Windows SmartScreen warnings that scare non-technical users more than the PowerShell command does.
+- **Classroom fit** — instructors typically want to customize branding, language, or which components to install. Compiling lets you own that.
+- **Trust** — forcing a rebuild from source is more transparent than shipping an opaque binary.
+
+#### Compile on Windows (~10 minutes)
+
+**Prerequisites** (install once):
+
+1. **Node.js 20+** — https://nodejs.org
+2. **Rust** (stable) — https://rustup.rs (pick default options)
+3. **Microsoft Visual Studio Build Tools** — https://visualstudio.microsoft.com/visual-cpp-build-tools/
+   - During install, check **"Desktop development with C++"**
+4. **WebView2 Runtime** — pre-installed on Windows 11; [download for Windows 10](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+
+**Build steps**:
+
+```powershell
+# 1. Clone the repo
+git clone https://github.com/wasintoh/claudecodeinstaller.git
+cd claudecodeinstaller/claude-installer-gui
+
+# 2. Install frontend dependencies (~2 min)
+npm install
+
+# 3. Build the installer (~5–8 min first time, cached after)
+npm run tauri build
+```
+
+**Your `.exe` will appear at**:
+
+```
+claude-installer-gui/src-tauri/target/release/bundle/
+├── nsis/Claude Code Installer_1.0.0_x64-setup.exe      ← recommended (smaller, modern)
+└── msi/Claude Code Installer_1.0.0_x64_en-US.msi       ← enterprise/GPO-friendly
+```
+
+Double-click either one to install, or distribute to your students via Google Drive, LINE, or USB.
+
+#### Optional: code signing
+
+Unsigned binaries show a SmartScreen warning ("Windows protected your PC"). To remove it:
+
+1. Get a code signing certificate (DigiCert, Sectigo, or free via [SignPath.io](https://signpath.io) for open source projects)
+2. Update `claude-installer-gui/src-tauri/tauri.conf.json`:
+   ```json
+   "windows": {
+     "certificateThumbprint": "YOUR_THUMBPRINT",
+     "digestAlgorithm": "sha256",
+     "timestampUrl": "http://timestamp.digicert.com"
+   }
+   ```
+3. Rebuild — the `.exe` will now be signed and trusted.
+
+#### Optional: automated CI builds
+
+This repo includes a [GitHub Actions workflow](.github/workflows/build-gui.yml) that auto-builds the GUI on Windows runners. Push to `main` or create a `v*` tag to trigger a build — the `.exe` will be uploaded as a workflow artifact (or attached to a Release for tags). Use this if you don't want to maintain a Windows build machine.
 
 ### Advanced install (saved PowerShell file)
 

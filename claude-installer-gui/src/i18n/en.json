@@ -68,6 +68,22 @@
     "fix_instructions": "How to fix",
     "download_link": "Direct download"
   },
+  "postInstall": {
+    "section_title": "Final Check & Launch",
+    "testing_message": "Testing 'claude --version'...",
+    "launching_message": "Opening a new terminal window for Claude Code...",
+    "test_success": "Claude Code is working: v{version}",
+    "launch_success": "A new terminal window has opened with Claude Code running",
+    "auto_repaired": "Auto-repaired {count} issue(s) before success",
+    "test_failed": "Verification failed: {error}",
+    "error_commandNotFound": "The 'claude' command is not found in PATH. Try opening a new terminal manually.",
+    "error_gitBashMissing": "Claude Code needs Git Bash. Try re-installing Git for Windows.",
+    "error_blocked": "Claude Code binary was blocked by Windows SmartScreen.",
+    "error_execFailed": "Claude Code exited with an error. See logs for details.",
+    "error_unknown": "An unknown error occurred.",
+    "retry_launch": "Try Launching Again",
+    "open_another": "Open Another Terminal"
+  },
   "uninstall": {
     "title": "Uninstall",
     "description": "Select the components you want to remove:",

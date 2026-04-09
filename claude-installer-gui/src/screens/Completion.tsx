@@ -8,6 +8,7 @@ interface CompletionProps {
   onRetry: () => void;
   onExportLog: () => Promise<string | null>;
   onOpenTerminal: () => void;
+  onRelaunchClaude: () => void;
   onClose: () => void;
 }
 
@@ -74,6 +75,7 @@ export function Completion({
   onRetry,
   onExportLog,
   onOpenTerminal,
+  onRelaunchClaude,
   onClose,
 }: CompletionProps) {
   const { t } = useI18n();
@@ -82,6 +84,13 @@ export function Completion({
   const allSuccess = state.results.every((r) => r.success);
   const failedSteps = state.results.filter((r) => !r.success);
   const successSteps = state.results.filter((r) => r.success);
+
+  // Post-install sub-phase state (testing → launching → launched)
+  const { postInstallPhase, testResult } = state;
+  const isTesting = postInstallPhase === 'testing';
+  const isLaunching = postInstallPhase === 'launching';
+  const isLaunched = postInstallPhase === 'launched';
+  const isTestFailed = postInstallPhase === 'testFailed';
 
   const handleExport = async () => {
     const path = await onExportLog();
@@ -183,8 +192,86 @@ export function Completion({
         ))}
       </div>
 
-      {/* Next steps (on success) */}
+      {/* Post-install test / launch status */}
       {allSuccess && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-4 bg-dark-surface rounded-lg border border-dark-border p-3"
+        >
+          <h3 className="text-xs font-semibold text-dark-text mb-2">
+            {t('postInstall.section_title')}
+          </h3>
+
+          {/* Testing phase */}
+          {isTesting && (
+            <div className="flex items-center gap-2 text-xs text-dark-muted">
+              <span className="inline-block w-3 h-3 rounded-full bg-primary animate-pulse" />
+              <span>{t('postInstall.testing_message')}</span>
+            </div>
+          )}
+
+          {/* Launching phase */}
+          {isLaunching && (
+            <div className="flex items-center gap-2 text-xs text-dark-muted">
+              <span className="inline-block w-3 h-3 rounded-full bg-primary animate-pulse" />
+              <span>{t('postInstall.launching_message')}</span>
+            </div>
+          )}
+
+          {/* Launched (success) */}
+          {isLaunched && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-success">✅</span>
+                <span className="text-dark-text">
+                  {t('postInstall.test_success', {
+                    version: testResult?.version || '',
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-success">✅</span>
+                <span className="text-dark-text">{t('postInstall.launch_success')}</span>
+              </div>
+              {testResult && testResult.repairAttempts > 0 && (
+                <div className="flex items-center gap-2 text-xs text-warning">
+                  <span>🩹</span>
+                  <span>
+                    {t('postInstall.auto_repaired', {
+                      count: String(testResult.repairAttempts),
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Test failed (after repair attempts) */}
+          {isTestFailed && testResult && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-error">❌</span>
+                <span className="text-dark-text">
+                  {t('postInstall.test_failed', { error: testResult.errorKind })}
+                </span>
+              </div>
+              <p className="text-[11px] text-dark-muted ml-5">
+                {t(`postInstall.error_${testResult.errorKind}`)}
+              </p>
+              {testResult.rawOutput && (
+                <p className="ml-5 text-[10px] text-error/70 font-mono truncate">
+                  {testResult.rawOutput}
+                </p>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Next steps (shown only if not launched yet — as a fallback manual path) */}
+      {allSuccess && !isLaunched && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -213,7 +300,7 @@ export function Completion({
       <div className="flex-1" />
 
       {/* Action buttons */}
-      <div className="flex gap-2 mt-4">
+      <div className="flex gap-2 mt-4 flex-wrap">
         {failedSteps.length > 0 && (
           <>
             <button
@@ -230,8 +317,39 @@ export function Completion({
             </button>
           </>
         )}
+
+        {/* Retry-launch button when test failed */}
+        {isTestFailed && (
+          <>
+            <button
+              onClick={onRelaunchClaude}
+              className="px-4 py-2 text-xs rounded-lg bg-primary hover:bg-primary-hover text-white font-medium transition-colors"
+            >
+              {t('postInstall.retry_launch')}
+            </button>
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 text-xs rounded-lg bg-dark-border hover:bg-dark-border/80 text-dark-text transition-colors"
+            >
+              {t('completion.export_log')}
+            </button>
+          </>
+        )}
+
         <div className="flex-1" />
-        {allSuccess && (
+
+        {/* Primary action: re-open terminal if already launched, or manual fallback */}
+        {allSuccess && isLaunched && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onRelaunchClaude}
+            className="px-5 py-2 text-xs rounded-lg bg-gradient-to-r from-primary to-amber-500 text-white font-semibold shadow-lg shadow-primary/25 transition-shadow"
+          >
+            {t('postInstall.open_another')}
+          </motion.button>
+        )}
+        {allSuccess && !isLaunched && !isTesting && !isLaunching && !isTestFailed && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -241,6 +359,7 @@ export function Completion({
             {t('completion.open_terminal')}
           </motion.button>
         )}
+
         <button
           onClick={onClose}
           className="px-4 py-2 text-xs rounded-lg bg-dark-border hover:bg-dark-border/80 text-dark-text transition-colors"

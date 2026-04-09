@@ -2,6 +2,7 @@ pub mod claude_installer;
 pub mod git_installer;
 pub mod node_installer;
 pub mod path_manager;
+pub mod post_install;
 pub mod system_check;
 pub mod uninstaller;
 

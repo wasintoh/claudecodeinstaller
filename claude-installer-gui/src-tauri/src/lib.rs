@@ -10,7 +10,8 @@ mod commands;
 mod utils;
 
 use commands::{
-    claude_installer, git_installer, node_installer, path_manager, system_check, uninstaller,
+    claude_installer, git_installer, node_installer, path_manager, post_install, system_check,
+    uninstaller,
 };
 use std::sync::{Arc, Mutex};
 use utils::logger::AppLogger;
@@ -66,6 +67,8 @@ pub fn run() {
             node_installer::install_node,
             claude_installer::install_claude,
             path_manager::fix_path,
+            post_install::test_claude_code,
+            post_install::launch_claude_in_new_terminal,
             uninstaller::detect_installed,
             uninstaller::uninstall_components,
         ])

@@ -68,6 +68,22 @@
     "fix_instructions": "วิธีแก้ไข",
     "download_link": "ลิงก์ดาวน์โหลดโดยตรง"
   },
+  "postInstall": {
+    "section_title": "ตรวจสอบและเปิด Claude Code",
+    "testing_message": "กำลังทดสอบคำสั่ง 'claude --version'...",
+    "launching_message": "กำลังเปิดหน้าต่าง Terminal ใหม่สำหรับ Claude Code...",
+    "test_success": "Claude Code ทำงานได้: v{version}",
+    "launch_success": "เปิดหน้าต่าง Terminal ใหม่พร้อม Claude Code เรียบร้อยแล้ว",
+    "auto_repaired": "แก้ไขปัญหาอัตโนมัติ {count} ครั้งก่อนสำเร็จ",
+    "test_failed": "การตรวจสอบล้มเหลว: {error}",
+    "error_commandNotFound": "ไม่พบคำสั่ง 'claude' ใน PATH ลองเปิด Terminal ใหม่และพิมพ์ 'claude'",
+    "error_gitBashMissing": "Claude Code ต้องการ Git Bash ลองติดตั้ง Git for Windows ใหม่อีกครั้ง",
+    "error_blocked": "ไฟล์ Claude Code ถูกบล็อกโดย Windows SmartScreen",
+    "error_execFailed": "Claude Code ทำงานผิดพลาด ดูรายละเอียดใน Log",
+    "error_unknown": "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
+    "retry_launch": "ลองเปิดอีกครั้ง",
+    "open_another": "เปิด Terminal ใหม่อีกหน้า"
+  },
   "uninstall": {
     "title": "ถอนการติดตั้ง",
     "description": "เลือกส่วนที่คุณต้องการลบ:",

@@ -121,6 +121,7 @@ export default function App() {
               }}
               onExportLog={installer.exportLogs}
               onOpenTerminal={installer.openTerminal}
+              onRelaunchClaude={installer.relaunchClaude}
               onClose={async () => {
                 const appWindow = getCurrentWindow();
                 await appWindow.close();

@@ -1,7 +1,9 @@
-# Claude Code Installer (GUI)
+# Claude Code Installer — GUI (Tauri v2)
 
 A desktop GUI installer for Claude Code built with Tauri v2 (Rust + React).
-Designed for non-technical Windows users who need a one-click install experience.
+Feature-equivalent to the [PowerShell installer](../claude-installer-ps/install-claude-code.ps1), including the post-install test + auto-repair + auto-launch flow.
+
+> **Important:** no pre-built `.exe` ships with this repo. You must compile it yourself on a Windows machine. See the [main README](../README.md#option-b--gui-installer-build-it-yourself) for the quick start.
 
 ## What it installs
 
@@ -9,20 +11,20 @@ Designed for non-technical Windows users who need a one-click install experience
 - **Node.js LTS** — required for npx, MCP Servers, and dev tools
 - **Claude Code** — AI Coding Assistant by Anthropic
 
-## Prerequisites
+After install, the GUI automatically runs `claude --version`, auto-repairs common issues (PATH, Git Bash missing, SmartScreen blocks), and opens a new PowerShell window with Claude Code ready to use.
 
-- [Node.js](https://nodejs.org/) v18+ (for building the frontend)
-- [Rust](https://rustup.rs/) (stable toolchain)
-- [Tauri CLI](https://v2.tauri.app/start/prerequisites/) v2
+## Prerequisites (Windows)
 
-```bash
-# Install Tauri CLI
-cargo install tauri-cli --version "^2.0"
-```
+1. **Node.js 20+** — https://nodejs.org
+2. **Rust** (stable) — https://rustup.rs
+3. **Microsoft Visual Studio Build Tools** — https://visualstudio.microsoft.com/visual-cpp-build-tools/ (check "Desktop development with C++")
+4. **WebView2 Runtime** — pre-installed on Windows 11, [download for Windows 10](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+
+No separate Tauri CLI install is needed — it's pulled in via `@tauri-apps/cli` in `package.json`.
 
 ## Development
 
-```bash
+```powershell
 # Install frontend dependencies
 npm install
 
@@ -32,14 +34,17 @@ npm run tauri dev
 
 ## Building for Distribution
 
-```bash
+```powershell
 # Build the production installer
 npm run tauri build
 ```
 
-Output files will be in `src-tauri/target/release/bundle/`:
-- `nsis/Claude Code Installer_1.0.0_x64-setup.exe` — NSIS installer
-- `msi/Claude Code Installer_1.0.0_x64_en-US.msi` — MSI installer
+First build takes ~5–8 minutes (Rust compiles a lot). Subsequent builds are cached and take ~1 minute.
+
+**Output files** in `src-tauri/target/release/bundle/`:
+
+- `nsis/Claude Code Installer_1.0.0_x64-setup.exe` — **recommended** NSIS installer (smaller, modern)
+- `msi/Claude Code Installer_1.0.0_x64_en-US.msi` — MSI installer (enterprise / GPO-friendly)
 
 ## Code Signing
 

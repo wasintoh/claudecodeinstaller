@@ -38,6 +38,25 @@ export interface LogEntry {
   message: string;
 }
 
+/** Post-install test result (mirrors Rust TestResult struct) */
+export interface TestResult {
+  success: boolean;
+  version: string | null;
+  /** "ok" | "commandNotFound" | "gitBashMissing" | "blocked" | "execFailed" | "unknown" */
+  errorKind: string;
+  binaryPath: string | null;
+  rawOutput: string;
+  repairAttempts: number;
+}
+
+/** Sub-phase tracking for post-install flow (Phases 5 & 6 in the PS script) */
+export type PostInstallPhase =
+  | 'idle'           // Haven't reached post-install yet
+  | 'testing'        // Running `claude --version` + auto-repair
+  | 'launching'      // Opening new PowerShell window
+  | 'launched'       // Successfully opened
+  | 'testFailed';    // All repair attempts exhausted
+
 // ── State ──
 
 export interface InstallerState {
@@ -58,6 +77,10 @@ export interface InstallerState {
   } | null;
   logs: LogEntry[];
   results: StepResult[];
+  /** Post-install test + launch sub-phase */
+  postInstallPhase: PostInstallPhase;
+  /** Result of the post-install test (null until testing completes) */
+  testResult: TestResult | null;
 }
 
 const initialState: InstallerState = {
@@ -72,6 +95,8 @@ const initialState: InstallerState = {
   downloadProgress: null,
   logs: [],
   results: [],
+  postInstallPhase: 'idle',
+  testResult: null,
 };
 
 // ── Actions ──
@@ -87,6 +112,11 @@ type Action =
   | { type: 'STEP_LOG'; payload: LogEntry }
   | { type: 'STEP_COMPLETED'; payload: StepResult }
   | { type: 'OVERALL_PROGRESS'; payload: { percent: number; message: string } }
+  | { type: 'START_TEST' }
+  | { type: 'TEST_COMPLETE'; payload: TestResult }
+  | { type: 'START_LAUNCH' }
+  | { type: 'LAUNCH_COMPLETE' }
+  | { type: 'LAUNCH_FAILED'; payload: string }
   | { type: 'CANCEL' }
   | { type: 'RESET' };
 
@@ -155,6 +185,29 @@ function reducer(state: InstallerState, action: Action): InstallerState {
     case 'OVERALL_PROGRESS':
       return { ...state, overallPercent: action.payload.percent };
 
+    case 'START_TEST':
+      return { ...state, postInstallPhase: 'testing' };
+
+    case 'TEST_COMPLETE':
+      return {
+        ...state,
+        testResult: action.payload,
+        postInstallPhase: action.payload.success ? 'launching' : 'testFailed',
+      };
+
+    case 'START_LAUNCH':
+      return { ...state, postInstallPhase: 'launching' };
+
+    case 'LAUNCH_COMPLETE':
+      return { ...state, postInstallPhase: 'launched' };
+
+    case 'LAUNCH_FAILED':
+      return {
+        ...state,
+        postInstallPhase: 'testFailed',
+        logs: [...state.logs, { timestamp: now(), level: 'error', message: action.payload }],
+      };
+
     case 'CANCEL':
       return { ...state, phase: 'cancelled' };
 
@@ -209,10 +262,11 @@ export function useInstaller() {
     }
 
     if (queue.length === 0) {
-      // Nothing to install, go to completion
+      // Nothing to install, but we still want to verify and launch Claude Code
+      // — the user explicitly ran the installer, so open a terminal for them.
       dispatch({ type: 'START_INSTALL', payload: { queue: [] } });
       dispatch({ type: 'STEP_COMPLETED', payload: { step: 'none', success: true, version: null, error: null } });
-      return;
+      // Fall through to the test/launch phase below
     }
 
     dispatch({ type: 'START_INSTALL', payload: { queue } });
@@ -305,6 +359,79 @@ export function useInstaller() {
     }
 
     dispatch({ type: 'OVERALL_PROGRESS', payload: { percent: 100, message: 'Complete' } });
+
+    // Skip post-install if the user cancelled mid-way
+    if (cancelRef.current) {
+      return;
+    }
+
+    // ── Phase 5 & 6: Test Claude Code runtime, auto-repair, and launch ──
+    // The test command is idempotent and safe to run even if some installs
+    // failed — it will simply report `commandNotFound` which the Completion
+    // screen can display.
+    dispatch({ type: 'START_TEST' });
+
+    let testResult: TestResult | null = null;
+    try {
+      const testOnEvent = new Channel<InstallEvent>();
+      testOnEvent.onmessage = (event: InstallEvent) => {
+        switch (event.event) {
+          case 'stepLog':
+            dispatch({
+              type: 'STEP_LOG',
+              payload: {
+                timestamp: now(),
+                level: event.data.level as 'info' | 'warn' | 'error',
+                message: event.data.message,
+              },
+            });
+            break;
+          case 'retryAttempt':
+            dispatch({
+              type: 'STEP_LOG',
+              payload: {
+                timestamp: now(),
+                level: 'warn',
+                message: `Auto-repair ${event.data.attempt}/${event.data.maxAttempts}: ${event.data.error}`,
+              },
+            });
+            break;
+        }
+      };
+
+      testResult = await invoke<TestResult>('test_claude_code', { onEvent: testOnEvent });
+      dispatch({ type: 'TEST_COMPLETE', payload: testResult });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      dispatch({
+        type: 'STEP_LOG',
+        payload: { timestamp: now(), level: 'error', message: `Test failed: ${msg}` },
+      });
+      dispatch({
+        type: 'TEST_COMPLETE',
+        payload: {
+          success: false,
+          version: null,
+          errorKind: 'execFailed',
+          binaryPath: null,
+          rawOutput: msg,
+          repairAttempts: 0,
+        },
+      });
+      return;
+    }
+
+    // If test passed, launch Claude Code in a new terminal window
+    if (testResult && testResult.success) {
+      dispatch({ type: 'START_LAUNCH' });
+      try {
+        await invoke('launch_claude_in_new_terminal');
+        dispatch({ type: 'LAUNCH_COMPLETE' });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        dispatch({ type: 'LAUNCH_FAILED', payload: msg });
+      }
+    }
   }, [state.systemCheck]);
 
   /** Cancel the current installation */
@@ -342,6 +469,18 @@ export function useInstaller() {
     }
   }, []);
 
+  /** Re-launch Claude Code in a new terminal (retry button on completion screen) */
+  const relaunchClaude = useCallback(async () => {
+    dispatch({ type: 'START_LAUNCH' });
+    try {
+      await invoke('launch_claude_in_new_terminal');
+      dispatch({ type: 'LAUNCH_COMPLETE' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      dispatch({ type: 'LAUNCH_FAILED', payload: msg });
+    }
+  }, []);
+
   return {
     state,
     runSystemCheck,
@@ -351,5 +490,6 @@ export function useInstaller() {
     reset,
     exportLogs,
     openTerminal,
+    relaunchClaude,
   };
 }
