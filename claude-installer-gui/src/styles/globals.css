@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Brand color theme */
+@theme {
+  --color-primary: #D97706;
+  --color-primary-hover: #B45309;
+  --color-primary-light: #FDE68A;
+  --color-success: #22C55E;
+  --color-warning: #EAB308;
+  --color-error: #EF4444;
+  --color-dark-bg: #1A1A2E;
+  --color-dark-surface: #16213E;
+  --color-dark-border: #2A2A4A;
+  --color-dark-text: #E2E8F0;
+  --color-dark-muted: #94A3B8;
+  --color-light-bg: #FFFFFF;
+  --color-light-surface: #F8FAFC;
+  --color-light-border: #E2E8F0;
+  --color-light-text: #1E293B;
+  --color-light-muted: #64748B;
+}
+
+/* Base styles */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Dark mode (default) */
+#root {
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text);
+}
+
+/* Light mode */
+.light #root,
+#root.light {
+  background-color: var(--color-light-bg);
+  color: var(--color-light-text);
+}
+
+/* Custom titlebar drag region */
+[data-tauri-drag-region] {
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+[data-tauri-drag-region]:active {
+  cursor: grabbing;
+}
+
+/* Custom scrollbar for log viewer */
+.log-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.log-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.log-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.log-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Prevent text selection on UI elements */
+button, label, .no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Confetti animation keyframes */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(500px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  animation: confetti-fall 3s ease-out forwards;
+}

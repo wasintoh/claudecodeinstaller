@@ -1,0 +1,64 @@
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ============================================================
+# Editors
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
+
+# ============================================================
+# Installer runtime logs (produced when the script runs)
+# ============================================================
+claude-code-install.log
+
+# ============================================================
+# Node.js / npm / Vite (claude-installer-gui)
+# ============================================================
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+
+# ============================================================
+# Rust / Cargo / Tauri (claude-installer-gui/src-tauri)
+# ============================================================
+target/
+*.rs.bk
+Cargo.lock.bak
+
+# Tauri build output (keep src-tauri/gen committed where needed)
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# ============================================================
+# Environment files (never commit secrets)
+# ============================================================
+.env
+.env.local
+.env.*.local
+
+# ============================================================
+# TypeScript
+# ============================================================
+*.tsbuildinfo
